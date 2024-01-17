@@ -13,7 +13,7 @@ const addContact = async (body) => {
 };
 
 const removeContact = async (contactId) => {
-  return await Contact.findByIdAndRemove(contactId);
+  return await Contact.findByIdAndDelete(contactId);
 };
 
 const updateContact = async (contactId, body) => {
