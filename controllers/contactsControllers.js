@@ -61,10 +61,26 @@ const updateContact = async (req, res, next) => {
   }
 };
 
+const updateStatusContact = async (req, res, next) => {
+  try {
+    const contact = await contactsOperations.updateStatusContact(
+      req.params.contactId,
+      req.body
+    );
+    if (!contact) {
+      return res.status(404).json({ message: "Not found" });
+    }
+    res.json(contact);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listContacts,
   getContactById,
   addContact,
   removeContact,
   updateContact,
+  updateStatusContact,
 };
