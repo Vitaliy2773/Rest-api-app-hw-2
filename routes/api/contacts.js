@@ -16,5 +16,10 @@ router.put(
   validate(updateContactSchema),
   contactsControllers.updateContact
 );
+router.patch(
+  "/:contactId/favorite",
+  validate(updateContactSchema),
+  contactsControllers.updateStatusContact
+);
 
 module.exports = router;
