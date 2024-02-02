@@ -1,6 +1,10 @@
 const User = require("../models/userModel");
+const fs = require("fs").promises;
+const jimp = require("jimp");
+const path = require("path");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const gravatar = require("gravatar");
 
 const register = async (req, res) => {
   try {
@@ -10,13 +14,16 @@ const register = async (req, res) => {
       return res.status(409).json({ message: "Email already in use" });
     }
 
-    const newUser = new User({ email, password });
+    const avatarURL = gravatar.url(email, { s: "250", r: "pg", d: "mm" });
+
+    const newUser = new User({ email, password, avatarURL });
     await newUser.save();
 
     res.status(201).json({
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -99,10 +106,40 @@ const updateSubscription = async (req, res) => {
   }
 };
 
+const updateAvatar = async (req, res) => {
+  try {
+    if (req.file) {
+      const { path: tempPath, filename } = req.file;
+      const avatar = await jimp.read(tempPath);
+      await avatar.resize(250, 250).writeAsync(tempPath);
+      const targetPath = path.join(
+        __dirname,
+        "..",
+        "public",
+        "avatars",
+        filename
+      );
+      await fs.rename(tempPath, targetPath);
+      const avatarURL = `/avatars/${filename}`;
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user._id,
+        { avatarURL },
+        { new: true }
+      );
+      res.json({ avatarURL: updatedUser.avatarURL });
+    } else {
+      res.status(400).json({ message: "No avatar file uploaded" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   logout,
   getCurrentUser,
   updateSubscription,
+  updateAvatar,
 };
