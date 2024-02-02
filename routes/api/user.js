@@ -11,7 +11,7 @@ router.post("/logout", auth, userController.logout);
 router.get("/current", auth, userController.getCurrentUser);
 router.patch("/subscription", auth, userController.updateSubscription);
 router.patch(
-  "/users/avatars",
+  "/avatars",
   auth,
   upload.single("avatar"),
   userController.updateAvatar
