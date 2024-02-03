@@ -1,10 +1,10 @@
 const User = require("../models/userModel");
+const fs = require("fs").promises;
+const jimp = require("jimp");
+const path = require("path");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
-const jimp = require("jimp");
-const path = require("path");
-const fs = require("fs");
 
 const register = async (req, res) => {
   try {
@@ -110,23 +110,23 @@ const updateAvatar = async (req, res) => {
   try {
     if (req.file) {
       const { path: tempPath, filename } = req.file;
-
       const avatar = await jimp.read(tempPath);
       await avatar.resize(250, 250).writeAsync(tempPath);
-
-      const targetPath = path.join("public", "avatars", filename);
-      fs.rename(tempPath, targetPath, async (err) => {
-        if (err) throw err;
-
-        const avatarURL = `/avatars/${filename}`;
-        const updatedUser = await User.findByIdAndUpdate(
-          req.user._id,
-          { avatarURL },
-          { new: true }
-        );
-
-        res.json({ avatarURL: updatedUser.avatarURL });
-      });
+      const targetPath = path.join(
+        __dirname,
+        "..",
+        "public",
+        "avatars",
+        filename
+      );
+      await fs.rename(tempPath, targetPath);
+      const avatarURL = `/avatars/${filename}`;
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user._id,
+        { avatarURL },
+        { new: true }
+      );
+      res.json({ avatarURL: updatedUser.avatarURL });
     } else {
       res.status(400).json({ message: "No avatar file uploaded" });
     }
