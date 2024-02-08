@@ -1,8 +1,6 @@
 const nodemailer = require("nodemailer");
-const { nanoid } = require("nanoid");
-require("dotenv").config();
 
-const User = require("./models/userModel");
+require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -13,14 +11,9 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-async function sendVerificationEmail(userEmail) {
+async function sendVerificationEmail(userEmail, verificationToken) {
+  const verificationUrl = `http://localhost:3000/api/users/verify/${verificationToken}`;
   try {
-    const verificationToken = nanoid();
-
-    await User.findOneAndUpdate({ email: userEmail }, { verificationToken });
-
-    const verificationUrl = `http://localhost:3000/api/users/verify/${verificationToken}`;
-
     await transporter.sendMail({
       from: "vitalii64773@gmail.com",
       to: userEmail,
