@@ -19,7 +19,7 @@ async function sendVerificationEmail(userEmail) {
 
     await User.findOneAndUpdate({ email: userEmail }, { verificationToken });
 
-    const verificationUrl = `http://localhost:3000/verify/${verificationToken}`;
+    const verificationUrl = `http://localhost:3000/api/users/verify/${verificationToken}`;
 
     await transporter.sendMail({
       from: "vitalii64773@gmail.com",

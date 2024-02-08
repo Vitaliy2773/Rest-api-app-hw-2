@@ -167,7 +167,7 @@ const resendVerificationEmail = async (req, res) => {
       from: "vitalii64773@gmail.com",
       to: user.email,
       subject: "Please verify your email",
-      html: `<p>Please verify your email by clicking on the following link: <a href="http://localhost:3000/verify/${user.verificationToken}">Verify Email</a></p>`,
+      html: `<p>Please verify your email by clicking on the following link: <a href="http://localhost:3000/api/users/verify/${user.verificationToken}">Verify Email</a></p>`,
     });
 
     res.json({ message: "Verification email resent" });
@@ -186,7 +186,7 @@ const verifyEmail = async (req, res) => {
         .send({ message: "Verification token is invalid or has expired" });
     }
     user.verify = true;
-    user.verificationToken = undefined;
+    user.verificationToken = " ";
     await user.save();
     res.send({ message: "Email successfully verified" });
   } catch (error) {
