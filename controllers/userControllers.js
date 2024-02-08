@@ -1,10 +1,12 @@
 const User = require("../models/userModel");
+const { sendVerificationEmail } = require("../emailService");
 const fs = require("fs").promises;
 const jimp = require("jimp");
 const path = require("path");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
+const { nanoid } = require("nanoid");
 
 const register = async (req, res) => {
   try {
@@ -15,9 +17,18 @@ const register = async (req, res) => {
     }
 
     const avatarURL = gravatar.url(email, { s: "250", r: "pg", d: "mm" });
+    const verificationToken = nanoid();
 
-    const newUser = new User({ email, password, avatarURL });
+    const newUser = new User({
+      email,
+      password,
+      avatarURL,
+      verificationToken,
+    });
+
     await newUser.save();
+
+    await sendVerificationEmail(email, newUser.verificationToken);
 
     res.status(201).json({
       user: {
@@ -27,7 +38,6 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in registration:", error);
     res.status(500).json({ message: "Error registering new user" });
   }
 };
@@ -39,6 +49,12 @@ const login = async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    if (!user.verify) {
+      return res
+        .status(401)
+        .json({ message: "Please verify your email first" });
     }
 
     const isMatch = bcrypt.compareSync(password, user.password);
@@ -135,6 +151,56 @@ const updateAvatar = async (req, res) => {
   }
 };
 
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "missing required field email" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.verify) {
+      console.log("User already verified");
+      return res
+        .status(400)
+        .json({ message: "Verification has already been passed" });
+    }
+
+    await sendVerificationEmail(email, user.verificationToken);
+
+    res.json({ message: "Verification email sent" });
+  } catch (error) {
+    res.status(500).json({ message: "Error resending verification email" });
+  }
+};
+
+const verifyEmail = async (req, res) => {
+  const { verificationToken } = req.params;
+
+  try {
+    const user = await User.findOne({ verificationToken });
+
+    if (!user) {
+      return res
+        .status(404)
+        .send({ message: "Verification token is invalid or has expired" });
+    }
+
+    user.verify = true;
+    user.verificationToken = " ";
+
+    await user.save();
+    res.send({ message: "Email successfully verified" });
+  } catch (error) {
+    res.status(500).send({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -142,4 +208,6 @@ module.exports = {
   getCurrentUser,
   updateSubscription,
   updateAvatar,
+  resendVerificationEmail,
+  verifyEmail,
 };
