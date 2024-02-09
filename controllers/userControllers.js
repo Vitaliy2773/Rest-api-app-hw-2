@@ -1,5 +1,5 @@
 const User = require("../models/userModel");
-const { sendVerificationEmail, transporter } = require("../emailService");
+const { sendVerificationEmail } = require("../emailService");
 const fs = require("fs").promises;
 const jimp = require("jimp");
 const path = require("path");

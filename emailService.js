@@ -2,21 +2,28 @@ const nodemailer = require("nodemailer");
 
 require("dotenv").config();
 
+const apiUrl = process.env.API_URL;
+const emailFrom = process.env.EMAIL_FROM;
+const host = process.env.SMTP_HOST;
+const port = process.env.SMTP_PORT;
+const user = process.env.SMTP_USER;
+const pass = process.env.SMTP_PASS;
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
+  host,
+  port,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user,
+    pass,
   },
 });
 
 async function sendVerificationEmail(userEmail, verificationToken) {
-  const verificationUrl = `http://localhost:3000/api/users/verify/${verificationToken}`;
+  const verificationUrl = `${apiUrl}/api/users/verify/${verificationToken}`;
 
   try {
     await transporter.sendMail({
-      from: "vitalii64773@gmail.com",
+      from: emailFrom,
       to: userEmail,
       subject: "Please verify your email",
       html: `<p>Please verify your email by clicking on the following link: <a href="${verificationUrl}">Verify Email</a></p>`,
