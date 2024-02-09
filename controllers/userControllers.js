@@ -1,5 +1,5 @@
 const User = require("../models/userModel");
-const { sendVerificationEmail } = require("../emailService");
+const { sendVerificationEmail, transporter } = require("../emailService");
 const fs = require("fs").promises;
 const jimp = require("jimp");
 const path = require("path");
@@ -26,9 +26,9 @@ const register = async (req, res) => {
       verificationToken,
     });
 
-    await sendVerificationEmail(email, verificationToken);
-
     await newUser.save();
+
+    await sendVerificationEmail(email, newUser.verificationToken);
 
     res.status(201).json({
       user: {
@@ -38,7 +38,6 @@ const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in registration:", error);
     res.status(500).json({ message: "Error registering new user" });
   }
 };
@@ -155,22 +154,26 @@ const updateAvatar = async (req, res) => {
 const resendVerificationEmail = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email, verify: false });
-
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found or already verified" });
+    if (!email) {
+      return res.status(400).json({ message: "missing required field email" });
     }
 
-    await transporter.sendMail({
-      from: "vitalii64773@gmail.com",
-      to: user.email,
-      subject: "Please verify your email",
-      html: `<p>Please verify your email by clicking on the following link: <a href="http://localhost:3000/api/users/verify/${user.verificationToken}">Verify Email</a></p>`,
-    });
+    const user = await User.findOne({ email });
 
-    res.json({ message: "Verification email resent" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.verify) {
+      console.log("User already verified");
+      return res
+        .status(400)
+        .json({ message: "Verification has already been passed" });
+    }
+
+    await sendVerificationEmail(email, user.verificationToken);
+
+    res.json({ message: "Verification email sent" });
   } catch (error) {
     res.status(500).json({ message: "Error resending verification email" });
   }
@@ -178,19 +181,22 @@ const resendVerificationEmail = async (req, res) => {
 
 const verifyEmail = async (req, res) => {
   const { verificationToken } = req.params;
+
   try {
     const user = await User.findOne({ verificationToken });
+
     if (!user) {
       return res
         .status(404)
         .send({ message: "Verification token is invalid or has expired" });
     }
+
     user.verify = true;
     user.verificationToken = " ";
+
     await user.save();
     res.send({ message: "Email successfully verified" });
   } catch (error) {
-    console.error(error);
     res.status(500).send({ message: "Internal server error" });
   }
 };

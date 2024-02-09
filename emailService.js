@@ -13,6 +13,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendVerificationEmail(userEmail, verificationToken) {
   const verificationUrl = `http://localhost:3000/api/users/verify/${verificationToken}`;
+
   try {
     await transporter.sendMail({
       from: "vitalii64773@gmail.com",
@@ -20,11 +21,9 @@ async function sendVerificationEmail(userEmail, verificationToken) {
       subject: "Please verify your email",
       html: `<p>Please verify your email by clicking on the following link: <a href="${verificationUrl}">Verify Email</a></p>`,
     });
-
-    console.log("Verification email sent to:", userEmail);
   } catch (error) {
     console.error("Error sending verification email:", error);
   }
 }
 
-module.exports = { sendVerificationEmail };
+module.exports = { sendVerificationEmail, transporter };
